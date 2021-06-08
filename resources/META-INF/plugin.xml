@@ -1,0 +1,66 @@
+<idea-plugin>
+  <id>com.wuyr.intellijmediaplayer</id>
+  <name>Media Player</name>
+  <version>1.0</version>
+  <vendor email="ifxcyr@gmail.com" url="https://www.github.com/wuyr">陈小缘</vendor>
+
+  <description><![CDATA[
+      <p>A Media Player of JetBrains Developer Tools.</p>
+      <p>It allows you to play the video on the editor directly.</p>
+      <br/>
+      <p><strong>Github: </strong><a href="https://github.com/wuyr/intellij-media-player"> github.com/wuyr/intellij-media-player</a></p>
+      <br/>
+    ]]></description>
+
+  <change-notes><![CDATA[
+      <p><li><strong>1.0 </strong>Provided basic functions for Media Player</li></p>
+      <br>
+    ]]>
+  </change-notes>
+
+  <idea-version since-build="182.2371.4"/>
+
+  <depends>com.intellij.modules.platform</depends>
+
+  <extensions defaultExtensionNs="com.intellij"/>
+
+  <actions>
+    <group id="intellij_media_player"
+           text="Player"
+           description="Media player">
+      <action id="com.wuyr.intellijmediaplayer.actions.OpenAction"
+              class="com.wuyr.intellijmediaplayer.actions.OpenAction"
+              icon="Icons.open"
+              text="Open Video from Path or URL"
+              description="Open a video from local file path or URL">
+      </action>
+      <action id="com.wuyr.intellijmediaplayer.actions.StopAction"
+              class="com.wuyr.intellijmediaplayer.actions.StopAction"
+              icon="Icons.stop"
+              text="Stop Play Video"
+              description="Stop play video">
+        <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift z"/>
+      </action>
+      <separator/>
+      <action id="com.wuyr.intellijmediaplayer.actions.TransparencyAction"
+              class="com.wuyr.intellijmediaplayer.actions.TransparencyAction"
+              icon="Icons.transparency"
+              text="Video Transparency"
+              description="Modify video transparency">
+      </action>
+      <action id="com.wuyr.intellijmediaplayer.actions.ControllerAction"
+              class="com.wuyr.intellijmediaplayer.actions.ControllerAction"
+              icon="Icons.controller"
+              text="Show Controller"
+              description="Hide media controller">
+      </action>
+      <action id="com.wuyr.intellijmediaplayer.actions.MuteAction"
+              class="com.wuyr.intellijmediaplayer.actions.MuteAction"
+              icon="Icons.voiced"
+              text="Switch to Mute"
+              description="Switch mute or voiced">
+      </action>
+      <add-to-group group-id="MainMenu" anchor="last"/>
+    </group>
+  </actions>
+</idea-plugin>
