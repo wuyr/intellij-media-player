@@ -1,2 +1,4 @@
-.idea
+.idea/misc.xml
+.idea/workspace.xml
+.idea/.gitignore
 out/
