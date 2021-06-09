@@ -66,7 +66,8 @@ object MediaPlayer {
                 }
             }
         }
-    var maxCacheQueueSize = DEFAULT_CACHE_QUEUE_SIZE
+    var cacheQueueSize = DEFAULT_CACHE_QUEUE_SIZE
+    var maxCacheQueueSize = DEFAULT_MAX_CACHE_QUEUE_SIZE
 
     @Volatile
     private var initialized = true
@@ -213,7 +214,10 @@ object MediaPlayer {
                     frame.image?.let {
                         imageConverter.getBufferedImage(frame)?.let {
                             val image = frame.timestamp to it
-                            if (sampleQueue.size >= maxCacheQueueSize && imageQueue.size >= maxCacheQueueSize) {
+                            val sampleQueueSize = sampleQueue.size
+                            val imageQueueSize = imageQueue.size
+                            if ((sampleQueueSize >= cacheQueueSize && imageQueueSize >= cacheQueueSize) ||
+                                    (sampleQueueSize >= maxCacheQueueSize || imageQueueSize >= maxCacheQueueSize)) {
                                 wait()
                             }
                             imageQueue.put(image)
@@ -229,7 +233,10 @@ object MediaPlayer {
                                     this[(index shl 1) + 1] = value.toByte()
                                 }
                             }
-                            if (sampleQueue.size >= maxCacheQueueSize && imageQueue.size >= maxCacheQueueSize) {
+                            val sampleQueueSize = sampleQueue.size
+                            val imageQueueSize = imageQueue.size
+                            if ((sampleQueueSize >= cacheQueueSize && imageQueueSize >= cacheQueueSize) ||
+                                    (sampleQueueSize >= maxCacheQueueSize || imageQueueSize >= maxCacheQueueSize)) {
                                 wait()
                             }
                             sampleQueue.put(sample)
@@ -252,15 +259,23 @@ object MediaPlayer {
                 while (!isStopped) {
                     if (isPlaying) {
                         imageQueue.take().let { (timestamp, image) ->
-                            notify()
+                            val sampleQueueSize = sampleQueue.size
+                            val imageQueueSize = imageQueue.size
+                            if (sampleQueueSize < maxCacheQueueSize && imageQueueSize < maxCacheQueueSize) {
+                                notify()
+                            }
                             if (timestamp == -1L) return@processSafely
                             (grabInterval - measureTimeMillis { image.draw() }).let {
                                 if (it > 0) {
-                                    wait2(when {
-                                        timestamp > nextAudioTimestamp + syncThreshold -> grabInterval * 2
-                                        timestamp < currentAudioTimestamp - syncThreshold -> it / 2
-                                        else -> it
-                                    })
+                                    if (sampleQueueSize < 2 && imageQueueSize > cacheQueueSize) {
+                                        imageQueue.clear()
+                                    } else {
+                                        wait2(when {
+                                            timestamp > nextAudioTimestamp + syncThreshold -> grabInterval * 2
+                                            timestamp < currentAudioTimestamp - syncThreshold -> it / 2
+                                            else -> it
+                                        })
+                                    }
                                 }
                             }
                         }
@@ -277,7 +292,9 @@ object MediaPlayer {
                 while (!isStopped) {
                     if (isPlaying) {
                         sampleQueue.take().let { (timestamp, sample) ->
-                            notify()
+                            if (sampleQueue.size < maxCacheQueueSize && imageQueue.size < maxCacheQueueSize) {
+                                notify()
+                            }
                             if (timestamp == -1L) return@processSafely
                             sample.flush()
                             currentAudioTimestamp = timestamp

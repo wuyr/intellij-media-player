@@ -3,6 +3,8 @@ package com.wuyr.intellijmediaplayer
 
 const val DEFAULT_CACHE_QUEUE_SIZE = 16
 
+const val DEFAULT_MAX_CACHE_QUEUE_SIZE = 128
+
 const val DEFAULT_VIDEO_URL = ""
 
 const val DEFAULT_CANVAS_TRANSPARENCY = .1F
