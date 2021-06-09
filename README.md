@@ -7,7 +7,30 @@
 <br/>
 
 ### 插件起源：
-今晚回去写。
+
+去年在新电脑上看视频的时候，在触摸板上做了一个缩放的手势把程序列表Call出来了：
+
+![preview](https://github.com/wuyr/intellij-media-player/raw/main/previews/1.jpg)
+
+我那时候是纯黑色的壁纸，再加上视频也刚好播放到白色衣服人物在黑夜中的画面，这就使得画面中的人物变得立体起来了！甚至有一种身临其境的感觉！
+
+![preview](https://github.com/wuyr/intellij-media-player/raw/main/previews/2.jpg)
+
+我当时就觉得，哇这种效果好棒啊，就像在播放透明背景的视频一样。记得那时候还在鸿神的群里讨论了一下关于播放透明视频的话题，后面还说到Android Studio有个设置透明背景图的功能，但图片毕竟是静态的，肯定没有动态的好玩。
+
+第二天我很随意的debug了一下Android Studio的设置背景图片的功能（完全不抱希望的），没想到居然发现了它是通过很简单的一句代码来指定图片：
+
+```java
+PropertiesComponent.getInstance().setValue("idea.background.editor", "image path")
+```
+
+于是我就想：**播放视频不也就是一张张图片快速切换嘛？如果我弄一个插件，里面用计时器周期性刷新这个图片，不就实现了动态的效果了？**
+
+第二天按照这个想法尝试了下，果然可以！接着我把一个视频每一帧图片都导出来，在插件中周期性调用上面的方法把每一帧图片路径都传进去。。。。
+
+你应该也猜到了，没错，很卡，非常非常卡！比PPT还要卡，卡到不能正常使用！
+
+认真看了下代码之后发现，原来这个设置背景图片是IDEA提供的，IDEA窗口的RootPane下面有个叫GlassPane的Child，那个含有透明度的背景图就是在GlassPane里面的PaintHelper中绘制的。更多细节会在即将到来的文章上面讲清楚，敬请期待。
 
 
 <br/>
@@ -38,11 +61,13 @@ emmmm，在即将到来的文章里会带大家一起了解这个东西，一起
 <br/>
 
 ### 安装：
-很快就好。
+
+很快就好。 （现在暂时可以先手动下载项目根目录下的[intellij-media-player.zip](https://github.com/wuyr/intellij-media-player/blob/main/intellij-media-player.zip) ，然后拖到IDE窗口中重启就行了）
 
 <br/>
 
 ### 温馨提示： 
+
 如果在播放视频中领导正在向你走来😰请不要犹豫，马上按下组合键*CTRL* + *ALT* + *SHIFT* + *Z* 视频会立即停止并隐藏相关控制按钮😃
 
 <br/>
@@ -56,6 +81,7 @@ emmmm，在即将到来的文章里会带大家一起了解这个东西，一起
 ![preview](https://github.com/wuyr/intellij-media-player/raw/main/previews/3.gif)
 
 ### 效果视频：
+
 [效果视频1](https://github.com/wuyr/intellij-media-player/raw/main/previews/1.mp4) ，[效果视频2](https://github.com/wuyr/intellij-media-player/raw/main/previews/2.mp4)，[效果视频3](https://github.com/wuyr/intellij-media-player/raw/main/previews/3.mp4)
 
 <br/>
