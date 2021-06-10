@@ -8,6 +8,8 @@ import com.wuyr.intellijmediaplayer.TEXT_HIDE_CONTROLLER
 import com.wuyr.intellijmediaplayer.TEXT_SHOW_CONTROLLER
 import com.wuyr.intellijmediaplayer.components.Controller
 import com.wuyr.intellijmediaplayer.media.MediaPlayer
+import java.awt.KeyboardFocusManager
+import javax.swing.JFrame
 
 /**
  * @author wuyr
@@ -31,7 +33,7 @@ class ControllerAction : AnAction() {
     private fun AnActionEvent.updateStatus() = presentation.run {
         if (isShowController) {
             if (!MediaPlayer.isStopped && !Controller.isShowing) {
-                Controller.show(this@updateStatus)
+                Controller.show(KeyboardFocusManager.getCurrentKeyboardFocusManager().focusedWindow as JFrame)
             }
         } else {
             if (Controller.isShowing) {

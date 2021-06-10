@@ -1,17 +1,19 @@
 package com.wuyr.intellijmediaplayer.components
 
+import com.intellij.execution.Platform
 import com.intellij.openapi.actionSystem.ActionToolbar
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.impl.ActionButton
+import com.intellij.openapi.util.SystemInfo
+import com.intellij.openapi.util.SystemInfo.isLinux
 import com.wuyr.intellijmediaplayer.actions.PauseAction
 import com.wuyr.intellijmediaplayer.media.MediaPlayer
 import icons.Icons
 import java.awt.BorderLayout
+import java.awt.Container
 import java.awt.Graphics
 import java.util.*
 import javax.swing.JFrame
-import javax.swing.JMenuBar
 import javax.swing.JPanel
 
 /**
@@ -22,7 +24,7 @@ import javax.swing.JPanel
 object Controller {
 
     var isShowing = false
-    private var controllerContainer: JPanel? = null
+    private var controllerPanel: JPanel? = null
     private var seekBar: Puppet? = null
     private var timeView: Puppet? = null
     private val pauseAction: PauseAction by lazy { PauseAction() }
@@ -32,7 +34,7 @@ object Controller {
             icon = Icons.pause
         }
     }
-    private var menuBar: JMenuBar? = null
+    private var controllerContainer: Container? = null
     private var timer: Timer? = null
     private val onStateChange: ((Int) -> Unit) = { newState ->
         if (newState == MediaPlayer.STATE_STOPPED) {
@@ -75,12 +77,14 @@ object Controller {
         timeView?.onTicktock()
     }
 
-    fun show(event: AnActionEvent) {
+    fun show(frame: JFrame) {
         MediaPlayer.onStateChange = onStateChange
         MediaPlayer.onFramePaint = onFramePaint
-        menuBar = (event.inputEvent.component.parent as JFrame).rootPane.jMenuBar.apply {
-            add(controlPanel)
-            revalidate()
+        when {
+            isLinux -> controllerContainer = frame.rootPane.jMenuBar.apply {
+                add(controlPanel)
+                revalidate()
+            }
         }
         isShowing = true
         startTimer()
@@ -92,18 +96,18 @@ object Controller {
             add(ActionButton(pauseAction, pausePresentation, "", ActionToolbar.NAVBAR_MINIMUM_BUTTON_SIZE), BorderLayout.LINE_START)
             add(SeekBar().also { seekBar = it }, BorderLayout.CENTER)
             add(TextView().also { timeView = it }, BorderLayout.LINE_END)
-            controllerContainer = this
+            controllerPanel = this
         }
 
     fun dismiss() {
         stopTimer()
-        menuBar?.let {
-            controllerContainer?.let { controller ->
+        controllerContainer?.let {
+            controllerPanel?.let { controller ->
                 it.remove(controller)
                 it.revalidate()
-                controllerContainer = null
+                controllerPanel = null
             }
-            menuBar = null
+            controllerContainer = null
         }
         seekBar = null
         timeView = null

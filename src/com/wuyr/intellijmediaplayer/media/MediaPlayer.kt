@@ -1,7 +1,6 @@
 package com.wuyr.intellijmediaplayer.media
 
 import com.intellij.ide.util.PropertiesComponent
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ui.AbstractPainter
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Painter
@@ -82,9 +81,9 @@ object MediaPlayer {
     private var grabInterval = 0L
     private var frameImage: VolatileImage? = null
 
-    fun init(event: AnActionEvent, url: String): Boolean {
+    fun init(frame: JFrame, url: String): Boolean {
         if (initialized) stop()
-        return if (injectPainter(event)) {
+        return if (injectPainter(frame)) {
             runCatching {
                 initialized = true
                 frameGrabber = FFmpegFrameGrabber.createDefault(url)
@@ -424,10 +423,10 @@ object MediaPlayer {
         }
     }
 
-    private fun injectPainter(event: AnActionEvent): Boolean {
+    private fun injectPainter(frame: JFrame): Boolean {
         try {
             clearBackground()
-            val newRootPane = (event.inputEvent.component.parent as JFrame).rootPane
+            val newRootPane = frame.rootPane
             if (::rootPane.isInitialized) {
                 if (rootPane == newRootPane) {
                     return true

@@ -7,6 +7,8 @@ import com.wuyr.intellijmediaplayer.DEFAULT_VIDEO_URL
 import com.wuyr.intellijmediaplayer.components.Controller
 import com.wuyr.intellijmediaplayer.dialogs.URLInputDialog
 import com.wuyr.intellijmediaplayer.media.MediaPlayer
+import java.awt.KeyboardFocusManager
+import javax.swing.JFrame
 
 /**
  * @author wuyr
@@ -20,14 +22,15 @@ class OpenAction : AnAction() {
     }
 
     override fun actionPerformed(event: AnActionEvent) {
+        val frame = KeyboardFocusManager.getCurrentKeyboardFocusManager().focusedWindow as JFrame
         PropertiesComponent.getInstance().run {
             URLInputDialog(getValue(javaClass.name, DEFAULT_VIDEO_URL)) {
                 if (it.isNotEmpty()) {
                     setValue(javaClass.name, it, DEFAULT_VIDEO_URL)
-                    if (MediaPlayer.init(event, it)) {
+                    if (MediaPlayer.init(frame, it)) {
                         if (MediaPlayer.start()) {
                             if (ControllerAction.isShowController) {
-                                Controller.show(event)
+                                Controller.show(frame)
                             }
                         }
                     }
