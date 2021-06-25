@@ -1,5 +1,8 @@
 package com.wuyr.intellijmediaplayer
 
+const val DEFAULT_MAX_VIDEO_WIDTH = 960
+
+const val DEFAULT_MAX_VIDEO_HEIGHT = 540
 
 const val DEFAULT_CACHE_QUEUE_SIZE = 16
 
@@ -24,6 +27,8 @@ const val DEFAULT_PROGRESS_BAR_SECONDARY_COLOR = 0x50A5D6A7
 const val DEFAULT_TEXT_VIEW_PADDING = 10
 
 const val DEFAULT_MUTE = false
+
+const val DEFAULT_LOOP = false
 
 const val DEFAULT_SHOW_CONTROLLER = false
 

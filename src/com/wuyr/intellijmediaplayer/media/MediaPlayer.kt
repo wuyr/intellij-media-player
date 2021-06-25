@@ -65,6 +65,7 @@ object MediaPlayer {
                 }
             }
         }
+    var loop = DEFAULT_LOOP
     var cacheQueueSize = DEFAULT_CACHE_QUEUE_SIZE
     var maxCacheQueueSize = DEFAULT_MAX_CACHE_QUEUE_SIZE
 
@@ -80,6 +81,8 @@ object MediaPlayer {
     private var alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, canvasAlpha)
     private var grabInterval = 0L
     private var frameImage: VolatileImage? = null
+    private var frameImageGraphics: Graphics2D? = null
+    private var hasVideo = false
 
     fun init(frame: JFrame, url: String): Boolean {
         if (initialized) stop()
@@ -111,8 +114,12 @@ object MediaPlayer {
                     1F -> lengthInTime
                     else -> (fixedPercent * lengthInTime).toLong()
                 }
-                if (isPlaying) notify()
-                else resume()
+                if (isPlaying) {
+                    notify()
+                    notify2()
+                } else {
+                    resume()
+                }
             }
         }
     }
@@ -125,16 +132,18 @@ object MediaPlayer {
             frameGrabber?.let { grabber ->
                 try {
                     grabber.start()
-                    val useScreenSize = grabber.imageWidth > rootPane.width || grabber.imageHeight > rootPane.height
-                    if (useScreenSize) {
-                        val widthScale = rootPane.width.toFloat() / grabber.imageWidth.toFloat()
-                        val heightScale = rootPane.height.toFloat() / grabber.imageHeight.toFloat()
-                        grabber.imageWidth = (grabber.imageWidth * widthScale).toInt()
-                        grabber.imageHeight = (grabber.imageHeight * heightScale).toInt()
+                    grabber.initVideoSize()
+                    hasVideo = grabber.hasVideo()
+                    if (hasVideo) {
+                        grabInterval = (1000 / grabber.frameRate).toLong()
+                        syncThreshold = grabInterval * 3 * 1000
                     }
                     sampleRate = grabber.sampleRate
-                    grabInterval = (1000 / grabber.frameRate).toLong()
-                    syncThreshold = grabInterval * 3 * 1000
+                    needReduceFrameRate = grabber.frameRate.toInt() >= 59
+                    if (needReduceFrameRate) {
+                        grabInterval *= 2
+                        syncThreshold *= 2
+                    }
                     audioOutputStream?.close()
                     audioOutputStream = runCatching {
                         (AudioSystem.getLine(DataLine.Info(SourceDataLine::class.java,
@@ -154,6 +163,8 @@ object MediaPlayer {
                     changeState(STATE_PLAYING)
                     frameImage?.flush()
                     frameImage = null
+                    frameImageGraphics?.dispose()
+                    frameImageGraphics = null
                     notify()
                     notify2()
                     clearCacheQueue()
@@ -174,10 +185,48 @@ object MediaPlayer {
         return false
     }
 
+    private fun FFmpegFrameGrabber.initVideoSize() {
+        val currentWidth = imageWidth
+        val currentHeight = imageHeight
+        val needScale = currentWidth > DEFAULT_MAX_VIDEO_WIDTH || currentHeight > DEFAULT_MAX_VIDEO_HEIGHT
+        val useScreenSize = currentWidth > rootPane.width || currentHeight > rootPane.height
+        var finalWidth = currentWidth
+        var finalHeight = currentHeight
+        if (needScale) {
+            if (currentWidth < currentHeight) {
+                val imageAspectRatio = currentHeight.toFloat() / currentWidth.toFloat()
+                finalWidth = DEFAULT_MAX_VIDEO_WIDTH
+                finalHeight = (DEFAULT_MAX_VIDEO_WIDTH.toFloat() * imageAspectRatio).toInt()
+            } else {
+                val imageAspectRatio = currentWidth.toFloat() / currentHeight.toFloat()
+                finalHeight = DEFAULT_MAX_VIDEO_HEIGHT
+                finalWidth = (DEFAULT_MAX_VIDEO_HEIGHT.toFloat() * imageAspectRatio).toInt()
+            }
+            if (finalWidth > rootPane.width || finalHeight > rootPane.height) {
+                val widthScale = rootPane.width.toFloat() / finalWidth.toFloat()
+                val heightScale = rootPane.height.toFloat() / finalHeight.toFloat()
+                finalWidth = (finalWidth * widthScale).toInt()
+                finalHeight = (finalHeight * heightScale).toInt()
+            }
+        } else if (useScreenSize) {
+            val widthScale = rootPane.width.toFloat() / currentWidth.toFloat()
+            val heightScale = rootPane.height.toFloat() / currentHeight.toFloat()
+            finalWidth = (currentWidth * widthScale).toInt()
+            finalHeight = (currentHeight * heightScale).toInt()
+        }
+        if (finalWidth != currentWidth || finalHeight != currentHeight) {
+            close()
+            imageWidth = finalWidth
+            imageHeight = finalHeight
+            start()
+        }
+    }
+
     fun resume() {
         if (initialized && isPaused) {
             changeState(STATE_PLAYING)
             notify()
+            notify2()
         }
     }
 
@@ -206,20 +255,29 @@ object MediaPlayer {
             return super.getBufferedImage(frame)
         }
     }
+    private var needReduceFrameRate = false
+    private var lastImageGrabbed = false
     private val frameGrabTask = Runnable {
         processSafely {
             while (!isStopped) {
-                runCatching { frameGrabber?.grab() }.getOrNull()?.also { frame ->
-                    frame.image?.let {
-                        imageConverter.getBufferedImage(frame)?.let {
-                            val image = frame.timestamp to it
-                            val sampleQueueSize = sampleQueue.size
-                            val imageQueueSize = imageQueue.size
-                            if ((sampleQueueSize >= cacheQueueSize && imageQueueSize >= cacheQueueSize) ||
-                                    (sampleQueueSize >= maxCacheQueueSize || imageQueueSize >= maxCacheQueueSize)) {
-                                wait()
+                frameGrabber?.grab()?.also { frame ->
+                    frame.image?.let { imageList ->
+                        if (imageList[0] != null) {
+                            if (needReduceFrameRate && lastImageGrabbed) {
+                                lastImageGrabbed = false
+                            } else {
+                                imageConverter.getBufferedImage(frame)?.let {
+                                    val image = frame.timestamp to it
+                                    val sampleQueueSize = sampleQueue.size
+                                    val imageQueueSize = imageQueue.size
+                                    if ((sampleQueueSize >= cacheQueueSize && imageQueueSize >= cacheQueueSize) ||
+                                            (sampleQueueSize >= maxCacheQueueSize || imageQueueSize >= maxCacheQueueSize)) {
+                                        wait()
+                                    }
+                                    imageQueue.put(image)
+                                    lastImageGrabbed = true
+                                }
                             }
-                            imageQueue.put(image)
                         }
                     }
                     frame.samples?.run {
@@ -241,7 +299,7 @@ object MediaPlayer {
                             sampleQueue.put(sample)
                         }
                     }
-                } ?: break
+                } ?: if (loop) frameGrabber?.timestamp = 0 else break
             }
             sampleQueue.put(-1L to ByteArray(0))
             imageQueue.put(-1L to BufferedImage(1, 1, 1))
@@ -253,28 +311,21 @@ object MediaPlayer {
     private var currentAudioTimestamp = 0L
     private var nextAudioTimestamp = 0L
     private val imageProcessTask = Runnable {
-        if (frameGrabber?.hasVideo() == true) {
+        if (hasVideo) {
             processSafely {
+                val maxInterval = grabInterval * 2
                 while (!isStopped) {
                     if (isPlaying) {
                         imageQueue.take().let { (timestamp, image) ->
-                            val sampleQueueSize = sampleQueue.size
-                            val imageQueueSize = imageQueue.size
-                            if (sampleQueueSize < maxCacheQueueSize && imageQueueSize < maxCacheQueueSize) {
-                                notify()
-                            }
                             if (timestamp == -1L) return@processSafely
+                            cutCacheAndNotify()
                             (grabInterval - measureTimeMillis { image.draw() }).let {
                                 if (it > 0) {
-                                    if (sampleQueueSize < 2 && imageQueueSize > cacheQueueSize) {
-                                        imageQueue.clear()
-                                    } else {
-                                        wait2(when {
-                                            timestamp > nextAudioTimestamp + syncThreshold -> grabInterval * 2
-                                            timestamp < currentAudioTimestamp - syncThreshold -> it / 2
-                                            else -> it
-                                        })
-                                    }
+                                    wait2(when {
+                                        timestamp > nextAudioTimestamp + syncThreshold -> maxInterval
+                                        timestamp < currentAudioTimestamp - syncThreshold -> (it / 2).coerceAtMost(maxInterval)
+                                        else -> it.coerceAtMost(maxInterval)
+                                    })
                                 }
                             }
                         }
@@ -291,10 +342,8 @@ object MediaPlayer {
                 while (!isStopped) {
                     if (isPlaying) {
                         sampleQueue.take().let { (timestamp, sample) ->
-                            if (sampleQueue.size < maxCacheQueueSize && imageQueue.size < maxCacheQueueSize) {
-                                notify()
-                            }
                             if (timestamp == -1L) return@processSafely
+                            cutCacheAndNotify()
                             sample.flush()
                             currentAudioTimestamp = timestamp
                             nextAudioTimestamp = sampleQueue.peek()?.first ?: Long.MAX_VALUE - syncThreshold
@@ -311,9 +360,21 @@ object MediaPlayer {
         }
     }
 
+    private fun cutCacheAndNotify() {
+        val sampleQueueSize = sampleQueue.size
+        val imageQueueSize = imageQueue.size
+        if (sampleQueueSize < 2 && imageQueueSize > cacheQueueSize) {
+            var index = 0
+            imageQueue.removeIf { (index % 2 == 0).also { index++ } }
+        }
+        if (sampleQueueSize < maxCacheQueueSize && imageQueueSize < maxCacheQueueSize) {
+            notify()
+        }
+    }
+
     private var repaintBarrier = false
     private val repaintTask = Runnable {
-        if (frameGrabber?.hasVideo() == true) {
+        if (hasVideo) {
             processSafely {
                 while (!isStopped) {
                     if (isPlaying) {
@@ -351,13 +412,8 @@ object MediaPlayer {
     private fun BufferedImage.draw() {
         updateCanvasSize()
         frameImage ?: initFrameImage()
-        frameImage?.createGraphics()?.run {
-            composite = AlphaComposite.Src
-            setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
-            draw2Graphics(this, paneSize, imageSize)
-            dispose()
-            flush()
-        }
+        frameImageGraphics?.let { draw2Graphics(it, paneSize, imageSize) }
+        flush()
     }
 
     private fun Image.draw2Graphics(g: Graphics, dstBounds: Rectangle, srcBounds: Rectangle) {
@@ -402,6 +458,10 @@ object MediaPlayer {
         }.apply {
             validate(null)
             accelerationPriority = 1F
+            frameImageGraphics = createGraphics().apply {
+                composite = AlphaComposite.Src
+                setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+            }
         }
     }
 
@@ -478,7 +538,11 @@ object MediaPlayer {
 
     private fun wait() = runCatching { synchronized(LOCK) { LOCK.wait() } }.isSuccess
 
-    private fun wait2(timeout: Long = 0L) = runCatching { synchronized(LOCK2) { LOCK2.wait(timeout) } }.isSuccess
+    private fun wait2(timeout: Long = 0L) = runCatching {
+        if (timeout > 0L) {
+            synchronized(LOCK2) { LOCK2.wait(timeout) }
+        }
+    }.isSuccess
 
     private fun notify() = runCatching { synchronized(LOCK) { LOCK.notifyAll() } }.isSuccess
 
@@ -498,7 +562,9 @@ object MediaPlayer {
     private fun release() {
         notify()
         notify2()
-        Thread.sleep(grabInterval * 4)
+        if (hasVideo) {
+            Thread.sleep(grabInterval * 4)
+        }
         audioOutputStream?.close()
         audioOutputStream = null
         clearCacheQueue()
@@ -506,6 +572,8 @@ object MediaPlayer {
         imageQueue.put(-1L to BufferedImage(1, 1, 1))
         frameImage?.flush()
         frameImage = null
+        frameImageGraphics?.dispose()
+        frameImageGraphics = null
         if (::rootPane.isInitialized) {
             rootPane.repaint()
         }
@@ -515,6 +583,7 @@ object MediaPlayer {
     private fun clearCacheQueue() {
         imageQueue.clear()
         sampleQueue.clear()
+        lastImageGrabbed = false
     }
 
     inline val Long.timestampString: String

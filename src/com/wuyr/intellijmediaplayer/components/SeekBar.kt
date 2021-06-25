@@ -8,6 +8,7 @@ import java.awt.Dimension
 import java.awt.EventQueue
 import java.awt.Graphics
 import java.awt.event.*
+import javax.swing.JLayeredPane
 import javax.swing.JProgressBar
 
 /**
@@ -42,9 +43,21 @@ class SeekBar : JProgressBar(), Puppet {
         preferredSize = Dimension(0, barHeight)
         maximum = maxValue
         addComponentListener(object : ComponentAdapter() {
-            override fun componentMoved(event: ComponentEvent) {
-                offsetX = parent.x + x
-                offsetY = parent.y + y
+            override fun componentResized(event: ComponentEvent) = reposition()
+
+            override fun componentMoved(event: ComponentEvent) = reposition()
+
+            private fun reposition() {
+                offsetX = x
+                offsetY = y
+                var container = parent
+                while (container != null) {
+                    offsetY += container.y
+                    container = container.parent
+                    if (container is JLayeredPane) {
+                        break
+                    }
+                }
             }
         })
         addMouseMotionListener(object : MouseMotionAdapter() {

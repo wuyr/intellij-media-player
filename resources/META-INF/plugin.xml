@@ -60,7 +60,7 @@
                     icon="Icons.stop"
                     text="Stop Play Video"
                     description="Stop play video">
-                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift z"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="alt x"/>
             </action>
             <separator/>
             <action id="com.wuyr.intellijmediaplayer.actions.TransparencyAction"

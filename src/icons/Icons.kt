@@ -34,5 +34,8 @@ object Icons {
     val pause = IconLoader.getIcon("/icons/pause.svg", javaClass)
 
     @JvmField
-    val thumb = IconLoader.getIcon("/icons/thumb.svg", javaClass)
+    val loop = IconLoader.getIcon("/icons/loop.svg", javaClass)
+
+    @JvmField
+    val single = IconLoader.getIcon("/icons/single.svg", javaClass)
 }

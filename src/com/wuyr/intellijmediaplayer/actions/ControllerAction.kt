@@ -33,7 +33,7 @@ class ControllerAction : AnAction() {
     private fun AnActionEvent.updateStatus() = presentation.run {
         if (isShowController) {
             if (!MediaPlayer.isStopped && !Controller.isShowing) {
-                Controller.show(KeyboardFocusManager.getCurrentKeyboardFocusManager().focusedWindow as JFrame)
+                Controller.show(KeyboardFocusManager.getCurrentKeyboardFocusManager().activeWindow as JFrame)
             }
         } else {
             if (Controller.isShowing) {

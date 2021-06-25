@@ -22,7 +22,7 @@ class OpenAction : AnAction() {
     }
 
     override fun actionPerformed(event: AnActionEvent) {
-        val frame = KeyboardFocusManager.getCurrentKeyboardFocusManager().focusedWindow as JFrame
+        val frame = KeyboardFocusManager.getCurrentKeyboardFocusManager().activeWindow as JFrame
         PropertiesComponent.getInstance().run {
             URLInputDialog(getValue(javaClass.name, DEFAULT_VIDEO_URL)) {
                 if (it.isNotEmpty()) {

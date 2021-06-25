@@ -9,6 +9,7 @@ import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 import javax.swing.BorderFactory
 import javax.swing.JLabel
+import javax.swing.JLayeredPane
 
 /**
  * @author wuyr
@@ -25,14 +26,23 @@ class TextView : JLabel(), Puppet {
         border = BorderFactory.createEmptyBorder(0, DEFAULT_TEXT_VIEW_PADDING, 0, DEFAULT_TEXT_VIEW_PADDING)
         puppetLabel.border = border
         addComponentListener(object : ComponentAdapter() {
-            override fun componentResized(event: ComponentEvent) {
-                puppetLabel.setSize(width, height)
-            }
+            override fun componentResized(event: ComponentEvent) = reposition()
 
-            override fun componentMoved(event: ComponentEvent) {
+            override fun componentMoved(event: ComponentEvent) = reposition()
+
+            private fun reposition() {
+                puppetLabel.setSize(width, height)
                 puppetLabel.setLocation(x, y)
-                offsetX = parent.x + x
-                offsetY = parent.y + y
+                offsetX = x
+                offsetY = y
+                var container = parent
+                while (container != null) {
+                    offsetY += container.y
+                    container = container.parent
+                    if (container is JLayeredPane) {
+                        break
+                    }
+                }
             }
         })
         SeekBar.onDragged = {

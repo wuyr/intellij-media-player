@@ -7,7 +7,9 @@ import com.wuyr.intellijmediaplayer.TEXT_TRANSPARENCY_MESSAGE
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.event.ActionEvent
+import java.awt.event.KeyEvent
 import javax.swing.*
+import javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW
 
 /**
  * @author wuyr
@@ -46,6 +48,7 @@ class TransparencyDialog(private val defaultValue: Float, private val onValueCha
             label.text = getMessage(value)
             onValueChange(value.toFloat() / 100F)
         }
+        registerKeyboardAction({ close(OK_EXIT_CODE) }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), WHEN_IN_FOCUSED_WINDOW)
         preferredSize = Dimension(300, 30)
         slider = this
     }

@@ -1,11 +1,10 @@
 package com.wuyr.intellijmediaplayer.components
 
-import com.intellij.execution.Platform
 import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.impl.ActionButton
-import com.intellij.openapi.util.SystemInfo
-import com.intellij.openapi.util.SystemInfo.isLinux
+import com.intellij.openapi.wm.impl.status.IdeStatusBarImpl
+import com.wuyr.intellijmediaplayer.actions.LoopAction
 import com.wuyr.intellijmediaplayer.actions.PauseAction
 import com.wuyr.intellijmediaplayer.media.MediaPlayer
 import icons.Icons
@@ -24,7 +23,7 @@ import javax.swing.JPanel
 object Controller {
 
     var isShowing = false
-    private var controllerPanel: JPanel? = null
+    private var onDismiss: (() -> Unit)? = null
     private var seekBar: Puppet? = null
     private var timeView: Puppet? = null
     private val pauseAction: PauseAction by lazy { PauseAction() }
@@ -34,7 +33,10 @@ object Controller {
             icon = Icons.pause
         }
     }
-    private var controllerContainer: Container? = null
+    private val loopAction: LoopAction by lazy { LoopAction() }
+    private val loopPresentation: Presentation by lazy {
+        Presentation().apply { icon = Icons.single }
+    }
     private var timer: Timer? = null
     private val onStateChange: ((Int) -> Unit) = { newState ->
         if (newState == MediaPlayer.STATE_STOPPED) {
@@ -80,11 +82,14 @@ object Controller {
     fun show(frame: JFrame) {
         MediaPlayer.onStateChange = onStateChange
         MediaPlayer.onFramePaint = onFramePaint
-        when {
-            isLinux -> controllerContainer = frame.rootPane.jMenuBar.apply {
-                add(controlPanel)
-                revalidate()
-            }
+        ((frame.rootPane.contentPane as Container).components.find { it is IdeStatusBarImpl } as? Container)?.apply {
+            add(controlPanel.also {
+                onDismiss = {
+                    remove(it)
+                    revalidate()
+                }
+            }, BorderLayout.SOUTH)
+            revalidate()
         }
         isShowing = true
         startTimer()
@@ -93,22 +98,19 @@ object Controller {
     private val controlPanel: JPanel
         get() = JPanel().apply {
             layout = BorderLayout()
-            add(ActionButton(pauseAction, pausePresentation, "", ActionToolbar.NAVBAR_MINIMUM_BUTTON_SIZE), BorderLayout.LINE_START)
+            add(JPanel().apply {
+                layout = BorderLayout()
+                add(ActionButton(loopAction, loopPresentation, "", ActionToolbar.NAVBAR_MINIMUM_BUTTON_SIZE), BorderLayout.LINE_START)
+                add(ActionButton(pauseAction, pausePresentation, "", ActionToolbar.NAVBAR_MINIMUM_BUTTON_SIZE), BorderLayout.LINE_END)
+            }, BorderLayout.LINE_START)
             add(SeekBar().also { seekBar = it }, BorderLayout.CENTER)
             add(TextView().also { timeView = it }, BorderLayout.LINE_END)
-            controllerPanel = this
         }
 
     fun dismiss() {
         stopTimer()
-        controllerContainer?.let {
-            controllerPanel?.let { controller ->
-                it.remove(controller)
-                it.revalidate()
-                controllerPanel = null
-            }
-            controllerContainer = null
-        }
+        onDismiss?.invoke()
+        onDismiss = null
         seekBar = null
         timeView = null
         SeekBar.onDragged = null
