@@ -46,5 +46,7 @@ const val TEXT_TRANSPARENCY_MESSAGE = "Current transparency: %s"
 
 const val TEXT_GRAB_ERROR = "Grab error!"
 
+const val TEXT_GRABBER_INITIALIZATION_FAILED = "Grabber initialization failed!"
+
 const val TEXT_PAINTER_INITIALIZATION_FAILED = "Background Painter initialization failed!"
 

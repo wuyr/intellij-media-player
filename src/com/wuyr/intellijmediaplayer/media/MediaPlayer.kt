@@ -87,10 +87,10 @@ object MediaPlayer {
     fun init(frame: JFrame, url: String): Boolean {
         if (initialized) stop()
         return if (injectPainter(frame)) {
-            runCatching {
-                initialized = true
+            runCatching(TEXT_GRABBER_INITIALIZATION_FAILED) {
                 frameGrabber = FFmpegFrameGrabber.createDefault(url)
-            }.isSuccess
+                initialized = true
+            }
         } else false
     }
 
@@ -130,7 +130,7 @@ object MediaPlayer {
     fun start(): Boolean {
         if (initialized && isStopped) {
             frameGrabber?.let { grabber ->
-                try {
+                return runCatching(TEXT_GRAB_ERROR, { stop() }) {
                     grabber.start()
                     grabber.initVideoSize()
                     hasVideo = grabber.hasVideo()
@@ -174,11 +174,6 @@ object MediaPlayer {
                     threadPool.execute(imageProcessTask)
                     threadPool.execute(sampleProcessTask)
                     threadPool.execute(repaintTask)
-                    return true
-                } catch (t: Throwable) {
-                    t.printStackTrace()
-                    t.showErrorDialog(TEXT_GRAB_ERROR)
-                    stop()
                 }
             }
         }
@@ -403,6 +398,16 @@ object MediaPlayer {
         stop()
     }
 
+    private inline fun runCatching(errorMessage: String, onFailed: () -> Unit = {}, block: () -> Unit) = try {
+        block()
+        true
+    } catch (t: Throwable) {
+        onFailed()
+        t.printStackTrace()
+        t.showErrorDialog(errorMessage)
+        false
+    }
+
     private fun ByteArray.flush() {
         audioOutputStream?.write(this, 0, size)
     }
@@ -483,25 +488,18 @@ object MediaPlayer {
         }
     }
 
-    private fun injectPainter(frame: JFrame): Boolean {
-        try {
-            clearBackground()
-            val newRootPane = frame.rootPane
-            if (::rootPane.isInitialized) {
-                if (rootPane == newRootPane) {
-                    return true
-                } else {
-                    rootPane.removePainter()
-                }
+    private fun injectPainter(frame: JFrame) = runCatching(TEXT_PAINTER_INITIALIZATION_FAILED) {
+        clearBackground()
+        val newRootPane = frame.rootPane
+        if (::rootPane.isInitialized) {
+            if (rootPane == newRootPane) {
+                return true
+            } else {
+                rootPane.removePainter()
             }
-            rootPane = newRootPane.apply { addPainter() }
-            replaceRepaintManager()
-            return true
-        } catch (t: Throwable) {
-            t.printStackTrace()
-            t.showErrorDialog(TEXT_PAINTER_INITIALIZATION_FAILED)
         }
-        return false
+        rootPane = newRootPane.apply { addPainter() }
+        replaceRepaintManager()
     }
 
     private fun JRootPane.addPainter() = (glassPane as IdeGlassPaneImpl).paintersHelper.let { helper ->
