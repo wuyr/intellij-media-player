@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.wuyr.intellijmediaplayer</id>
     <name>Media Player</name>
-    <version>1.0</version>
+    <version>1.0.4</version>
     <vendor email="ifxcyr@gmail.com" url="https://www.github.com/wuyr">陈小缘</vendor>
 
     <description><![CDATA[
@@ -12,6 +12,7 @@
             <strong>Github:</strong>
             <a href="https://github.com/wuyr/intellij-media-player">github.com/wuyr/intellij-media-player</a>
         </p>
+        <br/>
         <p>
             <strong>Previews:</strong>
         </p>
@@ -20,11 +21,13 @@
                 <img src="https://github.com/wuyr/intellij-media-player/raw/main/previews/3.gif" width="300" alt="3.gif">
             </a>
         </p>
+        <br/>
         <p>
             <a title="1.gif" href="https://github.com/wuyr/intellij-media-player/raw/main/previews/1.gif">
                 <img src="https://github.com/wuyr/intellij-media-player/raw/main/previews/1.gif" width="300" alt="1.gif">
             </a>
         </p>
+        <br/>
         <p>
             <a title="2.gif" href="https://github.com/wuyr/intellij-media-player/raw/main/previews/2.gif">
                 <img src="https://github.com/wuyr/intellij-media-player/raw/main/previews/2.gif" width="300" alt="2.gif">

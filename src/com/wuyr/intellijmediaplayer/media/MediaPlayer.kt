@@ -5,7 +5,6 @@ import com.intellij.openapi.ui.AbstractPainter
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Painter
 import com.intellij.openapi.wm.impl.IdeGlassPaneImpl
-import com.jetbrains.rd.util.measureTimeMillis
 import com.wuyr.intellijmediaplayer.*
 import com.wuyr.intellijmediaplayer.utils.get
 import com.wuyr.intellijmediaplayer.utils.invoke
@@ -73,6 +72,7 @@ object MediaPlayer {
     private var initialized = true
 
     private lateinit var rootPane: JRootPane
+    private var rootPaneInitialized = false
     private var frameGrabber: FFmpegFrameGrabber? = null
     private var audioOutputStream: SourceDataLine? = null
     private var audioOutputBufferSize = 0
@@ -145,7 +145,7 @@ object MediaPlayer {
                         syncThreshold *= 2
                     }
                     audioOutputStream?.close()
-                    audioOutputStream = runCatching {
+                    audioOutputStream = runCatchingNullable {
                         (AudioSystem.getLine(DataLine.Info(SourceDataLine::class.java,
                                 AudioFormat(AudioFormat.Encoding.PCM_SIGNED, grabber.sampleRate.toFloat(), 16,
                                         grabber.audioChannels, grabber.audioChannels * 2, grabber.sampleRate.toFloat(), true),
@@ -159,7 +159,7 @@ object MediaPlayer {
                                 }
                             }
                         }
-                    }.getOrNull()
+                    }
                     changeState(STATE_PLAYING)
                     frameImage?.flush()
                     frameImage = null
@@ -389,6 +389,12 @@ object MediaPlayer {
         repaintBarrier = true
     }
 
+    private inline fun measureTimeMillis(block: () -> Unit): Long {
+        val start = System.currentTimeMillis()
+        block()
+        return System.currentTimeMillis() - start
+    }
+
     private inline fun processSafely(block: () -> Unit) = try {
         block()
     } catch (t: Throwable) {
@@ -405,6 +411,21 @@ object MediaPlayer {
         onFailed()
         t.printStackTrace()
         t.showErrorDialog(errorMessage)
+        false
+    }
+
+    private inline fun <R> runCatchingNullable(block: () -> R) = try {
+        block()
+    } catch (t: Throwable) {
+        t.printStackTrace()
+        null
+    }
+
+    private inline fun runCatchingSilently(block: () -> Unit) = try {
+        block()
+        true
+    } catch (t: Throwable) {
+        t.printStackTrace()
         false
     }
 
@@ -465,7 +486,16 @@ object MediaPlayer {
             accelerationPriority = 1F
             frameImageGraphics = createGraphics().apply {
                 composite = AlphaComposite.Src
-                setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+                // disable antialias
+                setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF)
+                // disable dither
+                setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_DISABLE)
+                // nearest neighbor interpolation
+                setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR)
+                // speed preferred
+                setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_SPEED)
+                setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_SPEED)
+                setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED)
             }
         }
     }
@@ -491,7 +521,7 @@ object MediaPlayer {
     private fun injectPainter(frame: JFrame) = runCatching(TEXT_PAINTER_INITIALIZATION_FAILED) {
         clearBackground()
         val newRootPane = frame.rootPane
-        if (::rootPane.isInitialized) {
+        if (rootPaneInitialized) {
             if (rootPane == newRootPane) {
                 return true
             } else {
@@ -504,6 +534,7 @@ object MediaPlayer {
 
     private fun JRootPane.addPainter() = (glassPane as IdeGlassPaneImpl).paintersHelper.let { helper ->
         helper::class.invokeVoid(helper, "addPainter", Painter::class to painter, Component::class to glassPane)
+        rootPaneInitialized = true
     }
 
     private fun JRootPane.removePainter() = (glassPane as IdeGlassPaneImpl).paintersHelper.run {
@@ -534,17 +565,17 @@ object MediaPlayer {
     private val LOCK = Object()
     private val LOCK2 = Object()
 
-    private fun wait() = runCatching { synchronized(LOCK) { LOCK.wait() } }.isSuccess
+    private fun wait() = runCatchingSilently { synchronized(LOCK) { LOCK.wait() } }
 
-    private fun wait2(timeout: Long = 0L) = runCatching {
+    private fun wait2(timeout: Long = 0L) = runCatchingSilently {
         if (timeout > 0L) {
             synchronized(LOCK2) { LOCK2.wait(timeout) }
         }
-    }.isSuccess
+    }
 
-    private fun notify() = runCatching { synchronized(LOCK) { LOCK.notifyAll() } }.isSuccess
+    private fun notify() = runCatchingSilently { synchronized(LOCK) { LOCK.notifyAll() } }
 
-    private fun notify2() = runCatching { synchronized(LOCK2) { LOCK2.notifyAll() } }.isSuccess
+    private fun notify2() = runCatchingSilently { synchronized(LOCK2) { LOCK2.notifyAll() } }
 
     private fun Throwable.showErrorDialog(message: String = "") = EventQueue.invokeLater {
         Messages.showErrorDialog(StringWriter().use { sw ->
@@ -572,7 +603,7 @@ object MediaPlayer {
         frameImage = null
         frameImageGraphics?.dispose()
         frameImageGraphics = null
-        if (::rootPane.isInitialized) {
+        if (rootPaneInitialized) {
             rootPane.repaint()
         }
         repaintBarrier = false

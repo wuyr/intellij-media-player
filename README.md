@@ -2,7 +2,7 @@
 
 <br/>
 
-### 博客详情： 敬请期待。。。
+### 博客详情： <https://blog.csdn.net/u011387817/article/details/119217486>
 
 <br/>
 
@@ -20,7 +20,7 @@
 
 第二天我很随意的debug了一下Android Studio的设置背景图片的功能（完全不抱希望的），没想到居然发现了它是通过很简单的一句代码来指定图片：
 
-```java
+```kotlin
 PropertiesComponent.getInstance().setValue("idea.background.editor", "image path")
 ```
 
@@ -58,15 +58,26 @@ PropertiesComponent.getInstance().setValue("idea.background.editor", "image path
 
 >2021-06-25 17:47:50 我自闭了，尽管主动降低分辨率之后在Windows和Linux的1080p显示器上都能流畅播放4k视频了，但是MacBook Pro的高分辨率（3072*1920）屏幕每次绘制还是耗时100~300ms左右，太难了！
 
+>2021-08-26 01:40:00 好消息！在MacBook Pro(16寸)上已经可以流畅播放1080p 60帧和4k视频了！
+
+
 **还可能有同学想问，为什么能把视频画面放在所有组件的下面，并且能设置透明度？这是怎么做到的？**
 
-emmmm，在即将到来的文章里会带大家一起了解这个东西，一起从0开始做一个视频播放插件。
+请参考上面贴出的博客详情链接里面的文章。
 
 <br/>
-
 ### 安装：
+**在线安装：**
 
-很快就好。 （现在暂时可以先手动下载项目根目录下的[intellij-media-player.zip](https://github.com/wuyr/intellij-media-player/blob/main/intellij-media-player.zip) ，然后拖到IDE窗口中重启就行了）
+*Settings -> Plugins -> Marketplace*里搜索***Media Player***：
+
+![preview](https://github.com/wuyr/intellij-media-player/raw/master/previews/6.png)
+
+点击安装即可；
+
+**本地安装：**
+
+到 [releases](https://github.com/wuyr/intellij-media-player/releases) 里下载最新的 *intellij-media-player.zip* 后拖把它拖进IDE中并重启。
 
 <br/>
 

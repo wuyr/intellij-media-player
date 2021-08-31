@@ -206,7 +206,7 @@ fun KClass<*>.set(target: Any?, fieldName: String, value: Any?) = java.set(targe
 
 fun <T> KClass<*>.get(target: Any?, fieldName: String) = java.get<T>(target, fieldName)
 
-fun Any.replaceObject(fieldName: String, target: Any?) = runCatching {
+fun Any.replaceObject(fieldName: String, target: Any?) = try {
     "sun.misc.Unsafe".get<Any>(null, "theUnsafe")?.let { unsafe ->
         unsafe::class.invokeVoid(
                 unsafe, "putObjectVolatile", Any::class to this,
@@ -217,4 +217,8 @@ fun Any.replaceObject(fieldName: String, target: Any?) = runCatching {
                 Any::class to target
         )
     }
-}.isSuccess
+    true
+} catch (e: Exception) {
+    if (throwReflectException) throw e
+    false
+}
