@@ -5,12 +5,19 @@
     <vendor email="ifxcyr@gmail.com" url="https://www.github.com/wuyr">陈小缘</vendor>
 
     <description><![CDATA[
-        <p>A Media Player of JetBrains Developer Tools.</p>
-        <p>It allows you to play the video on the editor directly.</p>
+        <p>Media Player for your IDEs that allows you to play the video on the editor directly.</p>
         <br/>
         <p>
-            <strong>Github:</strong>
-            <a href="https://github.com/wuyr/intellij-media-player">github.com/wuyr/intellij-media-player</a>
+            <strong>Usage:</strong>
+            <p>After the plugin is installed, you will see a “Player” option behind the “Help” in the main menu:</p>
+            <a title="4.png" href="https://github.com/wuyr/intellij-media-player/raw/main/previews/4.png">
+                <img src="https://github.com/wuyr/intellij-media-player/raw/main/previews/4.png" width="400" alt="4.png">
+            </a>
+            <p>Click the first option, and then fill in the path of the video in the popup dialog:</p>
+            <a title="5.png" href="https://github.com/wuyr/intellij-media-player/raw/main/previews/5.png">
+                <img src="https://github.com/wuyr/intellij-media-player/raw/main/previews/5.png" width="500" alt="5.png">
+            </a>
+            <p>And finally click OK. The video will be played in the editor.</p>
         </p>
         <br/>
         <p>
@@ -18,20 +25,25 @@
         </p>
         <p>
             <a title="3.gif" href="https://github.com/wuyr/intellij-media-player/raw/main/previews/3.gif">
-                <img src="https://github.com/wuyr/intellij-media-player/raw/main/previews/3.gif" width="300" alt="3.gif">
+                <img src="https://github.com/wuyr/intellij-media-player/raw/main/previews/3.gif" width="500" alt="3.gif">
             </a>
         </p>
         <br/>
         <p>
             <a title="1.gif" href="https://github.com/wuyr/intellij-media-player/raw/main/previews/1.gif">
-                <img src="https://github.com/wuyr/intellij-media-player/raw/main/previews/1.gif" width="300" alt="1.gif">
+                <img src="https://github.com/wuyr/intellij-media-player/raw/main/previews/1.gif" width="500" alt="1.gif">
             </a>
         </p>
         <br/>
         <p>
             <a title="2.gif" href="https://github.com/wuyr/intellij-media-player/raw/main/previews/2.gif">
-                <img src="https://github.com/wuyr/intellij-media-player/raw/main/previews/2.gif" width="300" alt="2.gif">
+                <img src="https://github.com/wuyr/intellij-media-player/raw/main/previews/2.gif" width="500" alt="2.gif">
             </a>
+        </p>
+        <br/>
+        <p>
+            <strong>Github:</strong>
+            <a href="https://github.com/wuyr/intellij-media-player">github.com/wuyr/intellij-media-player</a>
         </p>
         <br/>
     ]]></description>
