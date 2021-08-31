@@ -66,6 +66,7 @@ PropertiesComponent.getInstance().setValue("idea.background.editor", "image path
 请参考上面贴出的博客详情链接里面的文章。
 
 <br/>
+
 ### 安装：
 **在线安装：**
 
