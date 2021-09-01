@@ -72,7 +72,7 @@ PropertiesComponent.getInstance().setValue("idea.background.editor", "image path
 
 *Settings -> Plugins -> Marketplace*里搜索***Media Player***：
 
-![preview](https://github.com/wuyr/intellij-media-player/raw/master/previews/6.png)
+![preview](https://github.com/wuyr/intellij-media-player/raw/main/previews/6.png)
 
 点击安装即可；
 
