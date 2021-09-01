@@ -104,7 +104,9 @@ PropertiesComponent.getInstance().setValue("idea.background.editor", "image path
 
 ### 更新日志：
 
-- **1.0** 完成基本功能。
+ - **1.0.4** 修复版本兼容性问题。
+
+ - **1.0** 完成基本功能。
 
 <br/>
 
